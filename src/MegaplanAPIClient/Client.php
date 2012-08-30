@@ -67,7 +67,6 @@ class Client
         );
 
         $signature = $this->getSignature( $request );
-        var_dump( $signature );
 
         $headers = array(
             'Accept' => $request->getAccept(),
@@ -80,8 +79,6 @@ class Client
         }
 
         $httpRequest->setHeaders( $headers );
-
-//        var_dump( $httpRequest );
 
         $httpMessage = $httpRequest->send();
 
@@ -102,7 +99,7 @@ class Client
     {
         $dataToHash = $request->getMethod() . "\n" .
             $request->getContentMD5() . "\n" .
-            "\n" .
+            "\n" . // похоже, совершенно не важно, передается Content-Type или нет, т.к. ни на что не влияет
             $request->getDateAsString() . "\n" .
             $this->getHost() . $request->formatUri();
 
