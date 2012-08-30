@@ -54,10 +54,9 @@ class Client
     public function send( Request $request )
     {
         $httpRequest = new \HttpRequest();
-        $httpRequest->setUrl( 'http' . ( $request->getHttps() ? 's' : '' ) . '://' . $this->getHost() . $request->getUri() );
+        $httpRequest->setUrl( 'http' . ( $request->getHttps() ? 's' : '' ) . '://' . $this->getHost() . $request->formatUri() );
         $httpRequest->setMethod( $this->httpMethodMapping[$request->getMethod()] );
         $httpRequest->setBody( $request->getData() );
-        $httpRequest->setContentType( $request->getContentType() );
 
         $httpRequest->setOptions(
             array(
@@ -68,17 +67,21 @@ class Client
         );
 
         $signature = $this->getSignature( $request );
+        var_dump( $signature );
 
         $headers = array(
-            'Accept' => $request->getContentType(),
+            'Accept' => $request->getAccept(),
             'X-Sdf-Date' => $request->getDateAsString(),
-            'X-Authorization' => $this->accessId . ':' . $signature,
-            'Content-MD5' => $request->getContentMD5()
+            'X-Authorization' => $this->getAccessId() . ':' . $signature
         );
+
+        if ( $request->getContentMD5() ) {
+            $headers['Content-MD5'] = $request->getContentMD5();
+        }
 
         $httpRequest->setHeaders( $headers );
 
-        var_dump( $httpRequest );
+//        var_dump( $httpRequest );
 
         $httpMessage = $httpRequest->send();
 
@@ -97,20 +100,11 @@ class Client
      */
     private function getSignature( Request $request )
     {
-//        $dataToHash = $request->getMethod() . "\n"
-//            . md5( $request->getData() ) . "\n"
-//// Content-Type при входящем запросе не указывается, так что пока исключим его из сигнатуры
-////            . $request->getFormat() . "\n"
-//            . $request->getDateAsString() . "\n"
-//            . $request->getUri();
-//
-//        return hash_hmac( 'sha1', $dataToHash, $this->getSecretKey() );
-
         $dataToHash = $request->getMethod() . "\n" .
             $request->getContentMD5() . "\n" .
-            $request->getContentType() . "\n" .
+            "\n" .
             $request->getDateAsString() . "\n" .
-            $this->getHost() . $request->getUri();
+            $this->getHost() . $request->formatUri();
 
         $signature = base64_encode( $this->hashHmac( 'sha1', $dataToHash, $this->getSecretKey() ) );
 

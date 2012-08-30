@@ -4,8 +4,8 @@ namespace MegaplanAPIClient;
 
 class Request
 {
-    const CONTENT_TYPE_XML = 'application/xml';
-    const CONTENT_TYPE_JSON = 'application/json';
+    const FORMAT_XML = '.xml';
+    const FORMAT_JSON = '.api';
 
     const METHOD_GET = 'GET';
     const METHOD_POST = 'POST';
@@ -15,7 +15,7 @@ class Request
     /** @var int URI запроса */
     protected $uri;
     /** @var string Формат запроса и ответа */
-    protected $contentType = self::CONTENT_TYPE_JSON;
+    protected $format = self::FORMAT_JSON;
     /** @var string Данные запроса в виде строки */
     protected $data;
     /** @var string Метод запроса */
@@ -55,17 +55,17 @@ class Request
     /**
      * @param string $format
      */
-    public function setContentType( $format )
+    public function setFormat( $format )
     {
-        $this->contentType = $format;
+        $this->format = $format;
     }
 
     /**
      * @return string
      */
-    public function getContentType()
+    public function getFormat()
     {
-        return $this->contentType;
+        return $this->format;
     }
 
     /**
@@ -158,21 +158,19 @@ class Request
 
     /**
      * Собирает строку запроса из URI и параметров
-     * @param string $uri URI
-     * @param array $params Параметры запроса (хэш-массив)
      * @return string
      */
-	public function formatUri( $uri, array $params = null )
+	public function formatUri()
 	{
-		$part = parse_url( $uri );
+		$part = parse_url( $this->getUri() );
 
 		if ( ! preg_match( "/\.[a-z]+$/u", $part['path'] ) ) {
-			$part['path'] .= '.' . ( $this->getContentType() == self::CONTENT_TYPE_JSON ? 'api' : 'xml' );
+			$part['path'] .= $this->getFormat();
 		}
 
         $uri = $part['path'];
 
-		if ( $params )
+		if ( $params = $this->getParams() )
 		{
 			if ( ! empty( $part['query'] ) ) {
 				parse_str( $part['query'], $params );
@@ -190,5 +188,33 @@ class Request
     {
         return $this->getData() ? md5( $this->getData() ) : '';
     }
+
+    public function getAccept()
+    {
+        switch ( $this->getFormat() )
+        {
+            case self::FORMAT_JSON:
+                return 'application/json';
+            case self::FORMAT_XML:
+                return 'application/xml';
+        }
+    }
+
+    /**
+     * @param array $params
+     */
+    public function setParams( $params )
+    {
+        $this->params = $params;
+    }
+
+    /**
+     * @return array
+     */
+    public function getParams()
+    {
+        return $this->params;
+    }
+
 
 }
